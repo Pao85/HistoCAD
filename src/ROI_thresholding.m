@@ -23,7 +23,7 @@ for n = 2 : 2%length(f)
     % Eigs is a struct that contains 6 fields; one for each RGB component
     % and their normalized counter parts (1-R, 2-G, 3-B, 4-R_norm,
     % 5-G_norm, 6-B_norm).
-    for i = 3 : 3
+    for i = 1 : 1
         
 % %         % Show all pixels in the Eigs image that are nonzero
 % %         figure();imshow(Eigs(i).im>0,[])
@@ -103,18 +103,18 @@ for n = 2 : 2%length(f)
         % a mitosis site, there should be a single pixel with a value of 2.
         % If there isn't a pixel valued 2, then that ROI is a FP.       
         for k = 1:length(ROI_labels)
-            tempImg = zeros(size(grdTruthMask));
-            tempImg(ROI_centroids(k,1),ROI_centroids(k,2)) = 1;
+% %             tempImg = zeros(size(grdTruthMask));
+% %             tempImg(ROI_centroids(k,1),ROI_centroids(k,2)) = 1;
+% %             
+% %             anotherTempImg = tempImg + grdTruthMask;
             
-            anotherTempImg = tempImg + grdTruthMask;
+            TP = TP + grdTruthMask(ROI_centroids(k,1),ROI_centroids(k,2));
+                   
             
-            if max(anotherTempImg(:)==2)
-                TP = TP + 1;
-                % Find the index of the pixel that is equal to 2
-                [tmpR, tmpC] = find(anotherTempImg==2);
+            if grdTruthMask(ROI_centroids(k,1),ROI_centroids(k,2))
                 % Find the ground-truth label of the pixel that is equal to
-                % 2
-                grdTruthLabelToRemove = grdTruthMask_label(tmpR, tmpC);
+                % 2                
+                grdTruthLabelToRemove = grdTruthMask_label(ROI_centroids(k,1),ROI_centroids(k,2));
                 % Set the entire region in ground-truth mask equal to zero
                 % so that it will not lead to another TP
                 grdTruthMask(grdTruthMask_label==grdTruthLabelToRemove) = 0;
@@ -124,7 +124,15 @@ for n = 2 : 2%length(f)
             
         end
         
-        sensitivity = TP/AP        
+        FN = AP - TP;
+        
+        sensitivity = TP/AP
+        
+        percision = TP/(TP+FP);
+        
+        recall = TP / (TP + FN);
+        
+        f1_score = (2 * TP) / ( (2 * TP )+ FP + FN);
         
     end
 end
