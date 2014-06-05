@@ -1,6 +1,7 @@
 function grdTruthMask = getGroundTruthMask( circle_coord,m,n )
-%This function returns a binary image where a circle of radius 30 pixels is
-%drawn is marked in white for each marked center in the ground truth. 
+% This function returns a binary image where a circle of radius 30 pixels is
+% drawn in white for each marked center in the ground truth. 
+
 
 grdTruthMask = zeros(m,n);
 
