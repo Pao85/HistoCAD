@@ -1,7 +1,7 @@
 % This script uses the eigen value map of the images to obtain regions of
 % interest (ROI). It also evaluates the results of ROI detection using the
 % provided ground-truth markings.
-
+tic
 clear all
 close all
 
@@ -11,8 +11,8 @@ dir_data = 'C:\Mitosis Detection Challenge\training_tiff_part1\01\';
 % get all .mat files in the specified subfolder
 f = dir([dir_data,'*.mat']);
 
-
-for n = 2 : 2%length(f)
+% n indicates the number 'name' of image
+for n = 1 : 1%length(f)
     
     % Load only the eigen value maps 'Eigs' from the .mat files.
     load([dir_data,f(n).name],'Eigs','circle_coord');
@@ -98,18 +98,13 @@ for n = 2 : 2%length(f)
         FP = 0;
         TP = 0;
         
-        % For every ROI centroid, turn on the corresponding pixel and add
-        % its image to the ground truth mask. If the detected centroid is
-        % a mitosis site, there should be a single pixel with a value of 2.
-        % If there isn't a pixel valued 2, then that ROI is a FP.       
+        % For every ROI centroid, if the corresponding pixel in the
+        % ground-truth mask is equal 1, then that ROI is a TP; otherwise, it
+        % a FP. If a TP, then remove the corresponding ground-truth circle
+        % (site) so that it will not lead to another incorrect TP detection. 
         for k = 1:length(ROI_labels)
-% %             tempImg = zeros(size(grdTruthMask));
-% %             tempImg(ROI_centroids(k,1),ROI_centroids(k,2)) = 1;
-% %             
-% %             anotherTempImg = tempImg + grdTruthMask;
-            
-            TP = TP + grdTruthMask(ROI_centroids(k,1),ROI_centroids(k,2));
-                   
+
+            TP = TP + grdTruthMask(ROI_centroids(k,1),ROI_centroids(k,2));                   
             
             if grdTruthMask(ROI_centroids(k,1),ROI_centroids(k,2))
                 % Find the ground-truth label of the pixel that is equal to
@@ -124,9 +119,13 @@ for n = 2 : 2%length(f)
             
         end
         
+        % Define the quantitative metrics to evaluate the results of ROI
+        % deteciton.
+        
+        % False negative
         FN = AP - TP;
         
-        sensitivity = TP/AP
+        sensitivity = TP/AP;
         
         percision = TP/(TP+FP);
         
@@ -136,3 +135,4 @@ for n = 2 : 2%length(f)
         
     end
 end
+toc
