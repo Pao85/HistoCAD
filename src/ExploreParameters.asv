@@ -19,7 +19,7 @@ for nf = 1 : 1%5
     f_tiff = dir([DBFolder,'*.tif']);
     f_csv = dir([DBFolder,'*.csv']);
     
-    for n = 2 : 4%length(f_tiff)
+    for n = 2 : 2%length(f_tiff)
         disp(['Folder ',num2str(nf),'/Image ',num2str(n)])
         
         % n indicates the number 'name' of image
@@ -204,7 +204,7 @@ toc
 % 9: Union of the results obtained with the Red and Blue components
 % 10: Union of the results obtained with the Normalized Red and Blue components
 
-% 10 x 10 x 11
+10
 
 % Inizialization
 precision = struct([]); 
