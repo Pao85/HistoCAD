@@ -14,7 +14,7 @@ FP = struct([]);
 for nf = 1 : 1%5
     
     % Change DBFolder to appropriate location on your computer.
-    DBFolder = ['C:\Users\Paola\Documents\MATLAB\ENTERPRISE\Pilot\training_tiff_part1\0',num2str(nf),'\'];
+    DBFolder = ['C:\Mitosis Detection Challenge\training_tiff_part1\scratchTesting',num2str(nf),'\'];
     
     f_tiff = dir([DBFolder,'*.tif']);
     f_csv = dir([DBFolder,'*.csv']);
@@ -184,7 +184,9 @@ for nf = 1 : 1%5
         
         ImageNumber = ImageNumber + 1;
         
-        clear coord circle_coord row col BW BWUnion BWcomponent1 BWUnionNorm
+        % Removing unwanted variables from memory. [ssalehia: removed
+        % ImVariousComponents due to memory issues after first test run]
+        clear coord circle_coord row col BW BWUnion BWcomponent1 BWUnionNorm ImVariousComponents
         
     end
 end
