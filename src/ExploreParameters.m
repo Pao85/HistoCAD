@@ -14,7 +14,7 @@ FP = struct([]);
 for nf = 1 : 1%5
     
     % Change DBFolder to appropriate location on your computer.
-    DBFolder = ['C:\Mitosis Detection Challenge\training_tiff_part1\scratchTesting',num2str(nf),'\'];
+    DBFolder = ['C:\Mitosis Detection Challenge\training_tiff_part1\0',num2str(nf),'\'];
     
     f_tiff = dir([DBFolder,'*.tif']);
     f_csv = dir([DBFolder,'*.csv']);
