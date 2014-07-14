@@ -1,21 +1,23 @@
-function bwImg = normalizeAndBinarizeGrayImg( grayImg, thresholdingMethod, gammaCorrectionFlag, gammaValue, histEqFlag )
-% Usage: bwImg = normalizeAndBinarizeGrayImg( grayImg, thresholdingMethod, gammaCorrectionFlag, gammaValue, histEqFlag )
+function thresholdResult = normalizeAndBinarizeGrayImg( grayImg, thresholdingMethod, gammaCorrectionFlag, gammaValue, histEqFlag )
+% Usage: thresholdResult = normalizeAndBinarizeGrayImg( grayImg, thresholdingMethod, gammaCorrectionFlag, gammaValue, histEqFlag )
 %
 % Normalize a grayscale image (grayImg) and then threshold it using one of
 % the following methods (thesholdingMethod):
 % 'moments': Moment-preserving threshold.
 % 'ridler-calvard': Ridler-Calvard threshold.
 % 'RATS': RATS threshold.
-% 'OTSU': Otsu's threshold.
+% 'OTSU': Otsu's threshold without stretching. 
+% 'OTSU-Stretched': Otsu's threshold with streching, with 0.5 multiplier.
 % 'concavity': Concavity-based threshold.
 % 'ISO': ISO data threshold.
 % 'entropy': Max. entropy threshold.
 
 
 
-MAX = max(grayImg(mask==1));
-MIN = min(grayImg(mask==1));
-normGrayImg = (grayImg-MIN)./(MAX-MIN);
+% MAX = max(grayImg(mask==1));
+% MIN = min(grayImg(mask==1));
+% Disabled normalization for now
+normGrayImg = grayImg;
 
 % normGrayImg = normGrayImg * 255;
 
@@ -29,31 +31,35 @@ end
 
 if strcmp(thresholdingMethod,'moments')
     
-    bwImg = im2bw(normGrayImg,moments(255*normGrayImg));
+    thresholdResult = moments(255*normGrayImg);
     
 elseif strcmp(thresholdingMethod,'ridler-calvard')
     
-    bwImg = im2bw(normGrayImg,Ridler_Calvard(255*normGrayImg));
+    thresholdResult = Ridler_Calvard(255*normGrayImg);
     
 elseif strcmp(thresholdingMethod,'RATS')
     
-    bwImg = im2bw(normGrayImg,RATS(255*normGrayImg));
+    thresholdResult = RATS(255*normGrayImg);
     
 elseif strcmp(thresholdingMethod,'concavity')
     
-    bwImg = im2bw(normGrayImg,concavityfunction(255*normGrayImg));
+    thresholdResult = concavityfunction(255*normGrayImg);
     
 elseif strcmp(thresholdingMethod,'ISO')
     
-    bwImg = im2bw(normGrayImg,isodata(255*normGrayImg));
+    thresholdResult = isodata(255*normGrayImg);
     
 elseif strcmp(thresholdingMethod,'entropy')
     
-    bwImg = im2bw(normGrayImg,maxentropy(255*normGrayImg));
+    thresholdResult = maxentropy(255*normGrayImg);
     
 elseif strcmp(thresholdingMethod,'OTSU')
     
-    bwImg = im2bw(normGrayImg,graythresh(255*normGrayImg));     
+    thresholdResult = graythresh(normGrayImg);
+    
+elseif strcmp(thresholdingMethod,'OTSU-Stretched')
+    
+    thresholdResult = 0.5 * graythresh(255*normGrayImg); 
   
 else
     
