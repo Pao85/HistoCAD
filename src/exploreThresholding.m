@@ -14,12 +14,12 @@ FP = zeros(39,8);
 for nf = 1 : 1%5
     
     % Change DBFolder to appropriate location on your computer.
-    DBFolder = ['C:\Mitosis Detection Challenge\training_tiff_part1\0',num2str(nf),'\'];
+    DBFolder = ['C:\Users\Paola\Documents\MATLAB\ENTERPRISE\Pilot\training_tiff_part1\0',num2str(nf),'\'];
     
     f_tiff = dir([DBFolder,'*.tif']);
     f_csv = dir([DBFolder,'*.csv']);
     
-    for n = 30 : 39%length(f_tiff)
+    for n = 39 : 39%length(f_tiff)
         disp(['Folder ',num2str(nf),'/Image ',num2str(n)])
         
         % n indicates the number 'name' of image
@@ -65,124 +65,128 @@ for nf = 1 : 1%5
         % Average of Red and Blue components
         ImVariousComponents(1).im = .5*(im2double(imcomplement(Im(:,:,1))) + im2double(imcomplement(Im(:,:,3))));
         
-        
+        %ImVariousComponents(1).im = .5*(im2double(imcomplement(ImNorm(:,:,1))) + im2double(imcomplement(ImNorm(:,:,3))));
+     
         % Set the ranges of the remaining parameters to explore
         
         %% Parameter 2: standard deviation of the Gaussian filter
-        Std_Gaussian_Range = 10;
+        Std_Gaussian_Range = [4 10 16] ;
         
         %% Parameter 3: size of the averaging filter
-        Size_Box_Range = 16;
+        Size_Box_Range = 8;
         
-        
-        
-        Eigs = EigenvaluesMap_Computation(ImVariousComponents(1).im,Std_Gaussian_Range,Size_Box_Range);
-        
-        % Label the regions in the Eigs image that are nonzero
-        L = bwlabel(Eigs > 0);
-        
-        % Compute the mean of each nonzero region that is obtained from the
-        % previous step
-        eigv_mv = zeros(max(L(:)),1);
-        parfor l = 1 : max(L(:))
-            bw_l = L == l;
-            eigv_mv(l) = mean(Eigs(bw_l>0));
+        for s = 1 : length(Std_Gaussian_Range)
+            
+            Std_value = Std_Gaussian_Range(s);
+            
+            Eigs = EigenvaluesMap_Computation(ImVariousComponents(1).im,Std_value,Size_Box_Range);
+            
+            % Label the regions in the Eigs image that are nonzero
+            L = bwlabel(Eigs > 0);
+            Eigs_norm = ((Eigs - min(Eigs(:)>0)) / (max(Eigs(:)>0) - min(Eigs(:)>0)));
+            % Compute the mean of each nonzero region that is obtained from the
+            % previous step
+            eigv_mv = zeros(max(L(:)),1);
+            for l = 1 : max(L(:))
+                bw_l = L == l;
+                %eigv_mv(l) = .5*(mean(ImVariousComponents(1).im(bw_l>0)) + mean(Eigs_norm(bw_l>0)));
+                eigv_mv(l) = mean(Eigs_norm(bw_l>0));
+                
+            end
+            
+            % Normalized the average intensties of the all the regions (note,
+            % this is a vector)
+            eigv_norm = ((eigv_mv - min(eigv_mv)) / (max(eigv_mv) - min(eigv_mv)));
+            
+            % Assign the mean values of each region to all the pixels in that
+            % region
+            Eigs_norm = zeros(size(Eigs));
+            for l = 1 : max(L(:))
+                bw_l = L == l;
+                Eigs_norm(L == l) = eigv_norm(l);
+            end
+            
+            % Obtain a suitable threshold using Otsu's method by streching the
+            % normalized values from 0 to 255 and binarize the original image based on
+            % the obtained threshold
+            
+            % Usage: thresholdResult = normalizeAndBinarizeGrayImg( grayImg, thresholdingMethod, gammaCorrectionFlag, gammaValue, histEqFlag )
+            %
+            % Normalize a grayscale image (grayImg) and then threshold it using one of
+            % the following methods (thesholdingMethod):
+            % 'moments': Moment-preserving threshold.
+            % 'ridler-calvard': Ridler-Calvard threshold.
+            % 'RATS': RATS threshold.
+            % 'OTSU': Otsu's threshold without stretching.
+            % 'OTSU-Stretched': Otsu's threshold with streching, with 0.5 multiplier.
+            % 'concavity': Concavity-based threshold.
+            % 'ISO': ISO data threshold.
+            % 'entropy': Max. entropy threshold.
+            thresholdingMethodName = {'moments','ridler-calvard','RATS','OTSU'...
+                ,'OTSU-Stretched','concavity' ...
+                ,'ISO','entropy'};
+            
+            for k = 1:length(thresholdingMethodName)
+                
+                BW = im2bw(Eigs_norm,getThreshold( eigv_norm, thresholdingMethodName(k), 0, 0, 0 ));
+                
+                
+                
+                % Save the binary mask including the detected ROIs
+                % obtained using the Red components (Normalized and not Normalized)
+                % to perform union of the detected ROIs with the ones
+                % obtained with the Blue components (Normalized and not Normalized)
+                % Save the related results (TP FN FP)
+                
+                % Evaluate performance given the obtained binary masks,
+                % BW, including the detected ROIs and the coordinates of the perimeter of the
+                % actual mitosis, circle_coord.
+                [tpSingle, fnSingle, fpSingle] = evaluate_performance(BW,circle_coord,1);
+                
+                TP(ImageNumber, s, k) = tpSingle;
+                
+                FN(ImageNumber, s, k) = fnSingle;
+                
+                FP(ImageNumber, s, k) = fpSingle;
+                
+                % %                     % Mix the results obtained from the Red and Blue
+                % %                     % components
+                % %                     switch Parameter1
+                % %
+                % %                         case 1
+                % %
+                % %                             BWcomponent1 = BW;
+                % %
+                % %                         case 2
+                % %                             % Union of the results obtained with the Red and Blue components
+                % %                             BWUnion = or(BWcomponent1,BW);
+                % %                             [tp_SingleUnion, fn_SingleUnion, fp_SingleUnion] = evaluate_performance(BWUnion,circle_coord,0);
+                % %
+                % %                             TP(9).data(Parameter2,Parameter3,ImageNumber) = tp_SingleUnion;
+                % %                             FN(9).data(Parameter2,Parameter3,ImageNumber) = fn_SingleUnion;
+                % %                             FP(9).data(Parameter2,Parameter3,ImageNumber) = fp_SingleUnion;
+                % %
+                % %                         case 4
+                % %
+                % %                             BWcomponent1Norm = BW;
+                % %                         case 5
+                % %                             % Union of the results obtained with the Red and Blue components normalized
+                % %                             BWUnionNorm = or(BWcomponent1Norm,BW);
+                % %
+                % %                             [tp_SingleUnionNorm, fn_SingleUnionNorm, fp_SingleUnionNorm] = evaluate_performance(BWUnionNorm,circle_coord,0);
+                % %
+                % %                             TP(10).data(Parameter2,Parameter3,ImageNumber) = tp_SingleUnionNorm;
+                % %                             FN(10).data(Parameter2,Parameter3,ImageNumber) = fn_SingleUnionNorm;
+                % %                             FP(10).data(Parameter2,Parameter3,ImageNumber) = fp_SingleUnionNorm;
+                % %
+                % %                     end
+                
+                
+                
+            end
+            
+            ImageNumber = ImageNumber + 1;
         end
-        
-        % Normalized the average intensties of the all the regions (note,
-        % this is a vector)
-        eigv_norm = ((eigv_mv - min(eigv_mv)) / (max(eigv_mv) - min(eigv_mv)));
-        
-        % Assign the mean values of each region to all the pixels in that
-        % region
-        Eigs_norm = zeros(size(Eigs));
-        for l = 1 : max(L(:))
-            bw_l = L == l;
-            Eigs_norm(L == l) = eigv_norm(l);
-        end
-        
-        % Obtain a suitable threshold using Otsu's method by streching the
-        % normalized values from 0 to 255 and binarize the original image based on
-        % the obtained threshold
-        
-        % Usage: thresholdResult = normalizeAndBinarizeGrayImg( grayImg, thresholdingMethod, gammaCorrectionFlag, gammaValue, histEqFlag )
-        %
-        % Normalize a grayscale image (grayImg) and then threshold it using one of
-        % the following methods (thesholdingMethod):
-        % 'moments': Moment-preserving threshold.
-        % 'ridler-calvard': Ridler-Calvard threshold.
-        % 'RATS': RATS threshold.
-        % 'OTSU': Otsu's threshold without stretching.
-        % 'OTSU-Stretched': Otsu's threshold with streching, with 0.5 multiplier.
-        % 'concavity': Concavity-based threshold.
-        % 'ISO': ISO data threshold.
-        % 'entropy': Max. entropy threshold.
-        thresholdingMethodName = {'moments','ridler-calvard','RATS','OTSU'...
-            ,'OTSU-Stretched','concavity' ...
-            ,'ISO','entropy'}
-        
-        parfor k = 1:length(thresholdingMethodName)
-            
-            BW = im2bw(Eigs_norm,getThreshold( eigv_norm, thresholdingMethodName(k), 0, 0, 0 ));
-            
-            
-            
-            % Save the binary mask including the detected ROIs
-            % obtained using the Red components (Normalized and not Normalized)
-            % to perform union of the detected ROIs with the ones
-            % obtained with the Blue components (Normalized and not Normalized)
-            % Save the related results (TP FN FP)
-            
-            % Evaluate performance given the obtained binary masks,
-            % BW, including the detected ROIs and the coordinates of the perimeter of the
-            % actual mitosis, circle_coord.
-            % figure;imshow(BW);
-            
-            [tpSingle, fnSingle, fpSingle] = evaluate_performance(BW,circle_coord,0);
-            
-            TP(ImageNumber, k) = tpSingle;
-            
-            FN(ImageNumber, k) = fnSingle;
-            
-            FP(ImageNumber, k) = fpSingle;
-            
-            % %                     % Mix the results obtained from the Red and Blue
-            % %                     % components
-            % %                     switch Parameter1
-            % %
-            % %                         case 1
-            % %
-            % %                             BWcomponent1 = BW;
-            % %
-            % %                         case 2
-            % %                             % Union of the results obtained with the Red and Blue components
-            % %                             BWUnion = or(BWcomponent1,BW);
-            % %                             [tp_SingleUnion, fn_SingleUnion, fp_SingleUnion] = evaluate_performance(BWUnion,circle_coord,0);
-            % %
-            % %                             TP(9).data(Parameter2,Parameter3,ImageNumber) = tp_SingleUnion;
-            % %                             FN(9).data(Parameter2,Parameter3,ImageNumber) = fn_SingleUnion;
-            % %                             FP(9).data(Parameter2,Parameter3,ImageNumber) = fp_SingleUnion;
-            % %
-            % %                         case 4
-            % %
-            % %                             BWcomponent1Norm = BW;
-            % %                         case 5
-            % %                             % Union of the results obtained with the Red and Blue components normalized
-            % %                             BWUnionNorm = or(BWcomponent1Norm,BW);
-            % %
-            % %                             [tp_SingleUnionNorm, fn_SingleUnionNorm, fp_SingleUnionNorm] = evaluate_performance(BWUnionNorm,circle_coord,0);
-            % %
-            % %                             TP(10).data(Parameter2,Parameter3,ImageNumber) = tp_SingleUnionNorm;
-            % %                             FN(10).data(Parameter2,Parameter3,ImageNumber) = fn_SingleUnionNorm;
-            % %                             FP(10).data(Parameter2,Parameter3,ImageNumber) = fp_SingleUnionNorm;
-            % %
-            % %                     end
-            
-            
-           
-        end
-        
-       ImageNumber = ImageNumber + 1; 
     end
     
     
