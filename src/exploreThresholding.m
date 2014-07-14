@@ -7,9 +7,9 @@ tic
 ImageNumber = 1;
 
 circle_coord = struct([]);
-TP = zeros(39,8);
-FN = zeros(39,8);
-FP = zeros(39,8);
+TP = zeros(3,8,39);
+FN = zeros(3,8,39);
+FP = zeros(3,8,39);
 
 for nf = 1 : 1%5
     
@@ -141,13 +141,13 @@ for nf = 1 : 1%5
                 % Evaluate performance given the obtained binary masks,
                 % BW, including the detected ROIs and the coordinates of the perimeter of the
                 % actual mitosis, circle_coord.
-                [tpSingle, fnSingle, fpSingle] = evaluate_performance(BW,circle_coord,1);
+                [tpSingle, fnSingle, fpSingle] = evaluate_performance(BW,circle_coord,0);
                 
-                TP(ImageNumber, s, k) = tpSingle;
+                TP(s, k,ImageNumber) = tpSingle;
                 
-                FN(ImageNumber, s, k) = fnSingle;
+                FN(s, k,ImageNumber) = fnSingle;
                 
-                FP(ImageNumber, s, k) = fpSingle;
+                FP(s, k,ImageNumber) = fpSingle;
                 
                 % %                     % Mix the results obtained from the Red and Blue
                 % %                     % components
